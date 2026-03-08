@@ -2,10 +2,16 @@
 
 2つの OpenClaw エージェント（Strategy Provider + Trader）が MCP Server を介して連携するデモ。
 
-## セットアップ
+## 前提条件
+
+- Node.js 20+
+- OpenClaw がビルド済み（`../yc-hackathon/openclaw` から `npm link` で使用）
 
 ```bash
-# 依存インストール
+# OpenClaw のセットアップ（初回のみ）
+cd ../yc-hackathon/openclaw && pnpm install && pnpm build && npm link && cd -
+
+# MCP Server の依存インストール
 cd src/demo1/platform && npm install && cd ../../..
 
 # データを初期状態にリセット
