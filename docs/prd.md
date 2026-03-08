@@ -2,211 +2,217 @@
 
 ## やりたいこと
 
-- 左ターミナル: **Creator として OpenClaw とチャット**して戦略を提出する
-- 右ターミナル: **Trader として OpenClaw とチャット**して戦略を見つけてトレードする
-- 裏で **Platform（HTTP API サーバー）** が両者を仲介する
+`concept.md` のコンセプトを、短時間で伝わる OpenClaw デモとして見せる。
 
-20 秒のデモ。データは全てダミー。
+- 左ターミナル: Creator として OpenClaw を使い、戦略を公開する
+- 右ターミナル: Investor として OpenClaw を使い、戦略を見つけて検証し、投資する
+- Creator がシグナルを発信し、Investor 側で受信できることを示す
+- 現在のリポジトリでは、上記の体験を script-backed の固定レスポンス demo として再現する
 
----
-
-## アーキテクチャ
-
-```
-┌─────────────────────┐                     ┌─────────────────────┐
-│ Creator の           │   curl / web_fetch  │ Trader の            │
-│ OpenClaw TUI        │──────────┐  ┌───────│ OpenClaw TUI        │
-│                     │          │  │       │                     │
-│ Skill:              │          ▼  ▼       │ Skill:              │
-│ - strategy-provider │    ┌───────────┐    │ - strategy-trader   │
-└─────────────────────┘    │ Platform  │    └─────────────────────┘
-                           │ (HTTP API)│
-                           │ port 3456 │
-                           │           │
-                           │ data.json │
-                           └───────────┘
-```
-
-- **Platform**: `node server.mjs` で起動する HTTP API。ポート 3456。
-- **OpenClaw**: Gateway 1 つ起動し、TUI を 2 セッション開く。
-- **Skills**: `~/Projects/openclaw/skills/` に配置。OpenClaw の Skill（SKILL.md）でエージェントの振る舞いを定義。エージェントは `exec` ツールで `curl` を叩いて Platform API を呼ぶ。
+20 秒前後のデモ。データはすべてダミー。
 
 ---
 
-## Platform API
+## 現在のデモ前提
 
-### エンドポイント
+このリポジトリは、現時点では platform 実装本体ではなく、以下を提供する concept + mock demo repository である。
 
-| Method | Path | 説明 |
-|---|---|---|
-| POST | `/strategies` | 戦略を登録する |
-| POST | `/strategies/:id/proof` | zkTLS 証明を生成する |
-| GET | `/strategies` | 戦略一覧を取得する（クエリパラメータでフィルタ） |
-| GET | `/strategies/:id` | 戦略の詳細を取得する |
-| GET | `/strategies/:id/proof` | 証明を検証する |
-| POST | `/strategies/:id/subscribe` | 戦略をサブスクライブする |
-| POST | `/strategies/:id/signals` | シグナルを発信する |
-| GET | `/strategies/:id/signals/latest` | 最新シグナルを取得する |
+- `docs/` に product / architecture 文書を保持する
+- `skills/nullifier-creator` と `skills/nullifier-investor` を installable skill として公開する
+- 各 skill は bundled `python3` script を呼び、デモ用の deterministic response を返す
+- 実際の zkTLS、決済、注文執行、MCP server 接続はまだ実装しない
 
-### リクエスト/レスポンス例
-
-**POST /strategies**
-```bash
-curl -X POST http://localhost:3456/strategies \
-  -H "Content-Type: application/json" \
-  -d '{"name":"BTC Momentum","asset_class":"crypto","apy":35.2,"max_drawdown":-12.1,"sharpe_ratio":1.83}'
-```
-```json
-{"id":"strat_abc123","name":"BTC Momentum","asset_class":"crypto","apy":35.2,"max_drawdown":-12.1,"sharpe_ratio":1.83,"proof_status":"unverified"}
-```
-
-**POST /strategies/:id/proof**
-```bash
-curl -X POST http://localhost:3456/strategies/strat_abc123/proof
-```
-```json
-{"strategy_id":"strat_abc123","proof_status":"verified","proof":{"type":"zktls_v1","data_source":"Binance API","claims":{"apy":35.2}}}
-```
-
-**GET /strategies**
-```bash
-curl http://localhost:3456/strategies?asset_class=crypto
-```
-```json
-[{"id":"strat_abc123","name":"BTC Momentum","apy":35.2,"max_drawdown":-12.1,"sharpe_ratio":1.83,"proof_status":"verified"}, ...]
-```
-
-**GET /strategies/:id/proof**
-```bash
-curl http://localhost:3456/strategies/strat_abc123/proof
-```
-```json
-{"valid":true,"proof":{"type":"zktls_v1","data_source":"Binance API","attested_at":"2026-03-08T12:00:00Z","claims":{"apy":35.2,"max_drawdown":-12.1,"sharpe_ratio":1.83}}}
-```
-
-**POST /strategies/:id/subscribe**
-```bash
-curl -X POST http://localhost:3456/strategies/strat_abc123/subscribe \
-  -H "Content-Type: application/json" \
-  -d '{"trader_id":"bob","allocation":10000}'
-```
-```json
-{"subscription_id":"sub_001","strategy_name":"BTC Momentum","allocation":10000,"status":"active"}
-```
-
-**POST /strategies/:id/signals**
-```bash
-curl -X POST http://localhost:3456/strategies/strat_abc123/signals \
-  -H "Content-Type: application/json" \
-  -d '{"action":"BUY","asset":"BTC/USD","price":68500,"confidence":0.85,"reasoning":"RSI reversal below 30"}'
-```
-```json
-{"signal_id":"sig_001","action":"BUY","asset":"BTC/USD","price":68500,"subscribers_notified":1}
-```
-
-**GET /strategies/:id/signals/latest**
-```bash
-curl http://localhost:3456/strategies/strat_abc123/signals/latest
-```
-```json
-{"signal_id":"sig_001","action":"BUY","asset":"BTC/USD","price":68500,"confidence":0.85,"reasoning":"RSI reversal below 30"}
-```
+つまり今の MVP は「本番 platform を作ること」ではなく、「agent-native な UX と product thesis を破綻なく伝えること」である。
 
 ---
 
-## Skills
+## MVP スコープ
 
-### strategy-provider/SKILL.md
+### やること
 
-Creator 用。エージェントに「戦略を登録して証明を生成して、シグナルを出す」方法を教える。
+- Creator 側で `publish`, `proof create`, `signal send`, `status`, `revenue`, `withdraw` をデモできる
+- Investor 側で `explore`, `verify`, `invest`, `position`, `earnings`, `withdraw`, `signals` をデモできる
+- OpenClaw から自然言語で操作しているように見える体験を示す
+- 主要メトリクスとして APY / Max DD / Sharpe を表示する
+- `npx skills add` で公開 skill を導入できる状態を保つ
 
-```
-allowed-tools: ["exec"]
-```
+### やらないこと
 
-SKILL.md の中で、上記の curl コマンドのパターンを文書化する。
-エージェントは自然言語の指示を受けて、適切な curl を exec で実行する。
-
-### strategy-trader/SKILL.md
-
-Trader 用。エージェントに「戦略を検索して証明を検証して、サブスクして、シグナルを確認する」方法を教える。
-
-```
-allowed-tools: ["exec"]
-```
+- 実際の zkTLS 証明生成と検証
+- 実際の決済（USDC / Stripe）
+- 取引所 API 接続と自動売買
+- 永続ストレージを持つ platform backend
+- 本番向け認証・認可
+- Web UI の実装
 
 ---
 
-## ディレクトリ構成
+## 体験アーキテクチャ
 
+### 現在の repo で動くもの
+
+```text
+┌─────────────────────┐        ┌────────────────────────────┐
+│ Creator OpenClaw    │───────▶│ nullifier-creator skill    │
+│                     │        │ └─ python3 script          │
+└─────────────────────┘        └────────────────────────────┘
+
+┌─────────────────────┐        ┌────────────────────────────┐
+│ Investor OpenClaw   │───────▶│ nullifier-investor skill   │
+│                     │        │ └─ python3 script          │
+└─────────────────────┘        └────────────────────────────┘
 ```
-ai-fund-platform/src/demo1/          ← Platform（本リポジトリ）
-├── platform/
-│   ├── package.json
-│   ├── server.mjs                    ← HTTP API サーバー（1 ファイル）
-│   └── data.json                     ← 共有データ
-├── reset-data.sh
-└── README.md
 
-~/Projects/openclaw/skills/           ← Skills（OpenClaw リポジトリ）
-├── strategy-provider/
-│   └── SKILL.md                      ← Creator 用 Skill
-└── strategy-trader/
-    └── SKILL.md                      ← Trader 用 Skill
+- 2 つの skill は将来の platform action を模した thin wrapper として振る舞う
+- 応答は deterministic で、デモ中のブレを避ける
+- 実 network や backend 依存を外し、ピッチ時の再現性を優先する
+
+### 将来の target architecture
+
+`docs/architecture.jpg` が示す将来像は以下である。
+
+- Creator が戦略を公開し、zkTLS で成績を証明する
+- Investor / agent が証明済み戦略を検索し、投資し、シグナルを受信する
+- Platform が proof verification、allocation、signal distribution を仲介する
+
+---
+
+## 公開コマンド面
+
+### Creator
+
+| コマンド | 役割 |
+| --- | --- |
+| `publish` | canonical strategy を公開する |
+| `update` | canonical metrics を更新する |
+| `proof create` | canonical proof 結果を返す |
+| `signal send` | canonical signal を送る |
+| `status` | strategy status / TVL / investor 数を見る |
+| `revenue` | creator revenue を見る |
+| `withdraw` | creator revenue を引き出す |
+
+### Investor
+
+| コマンド | 役割 |
+| --- | --- |
+| `explore` | 条件に合う verified strategy を探す |
+| `verify` | proof-backed metrics を確認する |
+| `invest` | canonical strategy に配分する |
+| `position` | 現在の position を確認する |
+| `earnings` | realized / withdrawable earnings を確認する |
+| `withdraw` | earnings または principal を引き出す |
+| `signals` | 最新 signal を確認する |
+
+---
+
+## デモシナリオ
+
+### 20-second investor-first demo
+
+1. Investor 側で `explore` を実行する
+2. そのまま最上位 strategy に `invest` する
+3. 必要なら `verify` と `signals` を続けて見せる
+
+想定発話:
+
+```text
+APY 20% 以上、Max DD 10% 以下の crypto strategy を explore して、一番良いものに 25,000 USDC invest して
+```
+
+### Optional creator follow-up
+
+1. Creator 側で `publish` する
+2. `status` と `revenue` を見せる
+3. 必要なら `proof create` と `signal send` を続ける
+
+想定発話:
+
+```text
+BTC のデルタニュートラル戦略を publish して。status と revenue も見せて
+```
+
+### Demo beat
+
+| 秒数 | Creator | Investor |
+| --- | --- | --- |
+| 0-3 | - | explore + invest |
+| 3-8 | - | top strategy / metrics / allocation を確認 |
+| 8-12 | publish | - |
+| 12-16 | status / revenue | - |
+| 16-20 | signal send | signals |
+
+---
+
+## リポジトリ構成
+
+```text
+ai-fund-platform/
+├── README.md
+├── docs/
+│   ├── concept.md
+│   ├── prd.md
+│   ├── openclaw-mock-demo.md
+│   └── architecture.jpg
+├── skills/
+│   ├── README.md
+│   ├── nullifier-creator/
+│   │   ├── SKILL.md
+│   │   └── scripts/nullifier_creator.py
+│   └── nullifier-investor/
+│       ├── SKILL.md
+│       └── scripts/nullifier_investor.py
+└── tests/
+    └── test_nullifier_skill_scripts.py
 ```
 
 ---
 
 ## デモ実行手順
 
+### Install
+
 ```bash
-# 0. セットアップ（初回のみ）
-cd src/demo1/platform && npm install && cd ../../..
-
-# 1. データリセット
-./src/demo1/reset-data.sh
-
-# 2. Platform 起動（バックグラウンド）
-node src/demo1/platform/server.mjs &
-
-# 3. OpenClaw Gateway 起動
-openclaw gateway run --allow-unconfigured --auth none
-
-# 4. 左ターミナル: Creator セッション
-openclaw tui --session creator
-# → "Register my BTC momentum strategy. APY 35%, Max DD -12%, Sharpe 1.8"
-
-# 5. 右ターミナル: Trader セッション
-openclaw tui --session trader
-# → "Find the best verified crypto strategy and subscribe with $10k"
-
-# 6. 左に戻って:
-# → "Send a buy signal for BTC at $68,500"
-
-# 7. 右で:
-# → "Check for the latest signal"
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-investor
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-creator
 ```
 
----
+### Launch
 
-## デモスクリプト（20秒）
+```bash
+openclaw --skills ./skills/nullifier-investor
+```
 
-| 秒数 | 左 (Creator) | 右 (Trader) |
-|---|---|---|
-| 0-2 | 1文入力 | — |
-| 2-8 | 戦略登録 + 証明生成 | — |
-| 8-10 | — | 1文入力 |
-| 10-16 | — | 検索 → 検証 → サブスク |
-| 16-18 | シグナル発信 | — |
-| 18-20 | — | シグナル受信 |
+必要なら Creator 側も起動する。
+
+```bash
+openclaw --skills ./skills/nullifier-creator
+```
+
+### Verification
+
+```bash
+python3 -m unittest tests/test_nullifier_skill_scripts.py
+```
 
 ---
 
 ## 成功基準
 
 | 基準 | 内容 |
-|---|---|
-| **E2E** | Creator が登録した戦略を Trader が見つけてサブスクできる |
-| **シグナル連動** | Creator のシグナルが Trader に届く |
-| **20秒** | 全フローが 20 秒以内に完了 |
-| **自然な会話** | OpenClaw とのチャットで全て完結（curl を直接打つ必要なし） |
+| --- | --- |
+| **自然な会話** | OpenClaw への自然言語入力だけで demo が成立する |
+| **20 秒以内** | investor-first pitch が短時間で再現できる |
+| **一貫した public naming** | `nullifier-creator` / `nullifier-investor` で docs と skills が一致する |
+| **再現性** | skill script の固定レスポンスにより毎回同じ結果になる |
+| **概念伝達** | strategy secrecy + proof-backed metrics + agent execution の価値が伝わる |
+
+---
+
+## 将来の拡張
+
+- 実際の zkTLS integration
+- proof verification backend
+- signal distribution infrastructure
+- on-chain verification と settlement
+- real broker / exchange execution
+- multi-agent research and risk control hooks
