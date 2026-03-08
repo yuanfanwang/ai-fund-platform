@@ -1,9 +1,28 @@
-# PRD: Autonomous Hedge Fund Platform — MVP Demo
+# PRD: Autonomous Hedge Fund Platform — YC Demo
 
-## 目的
+## やりたいこと
 
-concept.md のコンセプトを動くデモとして実証する。
-Creator が戦略を公開し、Investor が検索・検証・投資・シグナル受信するフローを、2つの OpenClaw インスタンスと1つの Platform を通じて End-to-End で動かす。
+`concept.md` のコンセプトを、短時間で伝わる OpenClaw デモとして見せる。
+
+- 左ターミナル: Creator として OpenClaw を使い、戦略を公開する
+- 右ターミナル: Investor として OpenClaw を使い、戦略を見つけて検証し、投資する
+- Creator がシグナルを発信し、Investor 側で受信できることを示す
+- 現在のリポジトリでは、上記の体験を script-backed の固定レスポンス demo として再現する
+
+20 秒前後のデモ。データはすべてダミー。
+
+---
+
+## 現在のデモ前提
+
+このリポジトリは、現時点では platform 実装本体ではなく、以下を提供する concept + mock demo repository である。
+
+- `docs/` に product / architecture 文書を保持する
+- `skills/nullifier-creator` と `skills/nullifier-investor` を installable skill として公開する
+- 各 skill は bundled `python3` script を呼び、デモ用の deterministic response を返す
+- 実際の zkTLS、決済、注文執行、MCP server 接続はまだ実装しない
+
+つまり今の MVP は「本番 platform を作ること」ではなく、「agent-native な UX と product thesis を破綻なく伝えること」である。
 
 ---
 
@@ -11,419 +30,189 @@ Creator が戦略を公開し、Investor が検索・検証・投資・シグナ
 
 ### やること
 
-- Creator 用 OpenClaw から戦略を登録・証明生成・シグナル発信
-- Investor 用 OpenClaw から戦略を検索・検証・投資・シグナル受信
-- Platform が MCP Server として両者を仲介
-- zkTLS 証明は **モック**（デモ用にダミー証明を生成・検証）
-- 戦略の成績指標（APY, PnL, Max DD）の表示
+- Creator 側で `publish`, `proof create`, `signal send`, `status`, `revenue`, `withdraw` をデモできる
+- Investor 側で `explore`, `verify`, `invest`, `position`, `earnings`, `withdraw`, `signals` をデモできる
+- OpenClaw から自然言語で操作しているように見える体験を示す
+- 主要メトリクスとして APY / Max DD / Sharpe を表示する
+- `npx skills add` で公開 skill を導入できる状態を保つ
 
-### やらないこと（MVP 外）
+### やらないこと
 
-- 実際の zkTLS 証明（TLSNotary / Reclaim Protocol 統合）
-- オンチェーン検証・スマートコントラクト
+- 実際の zkTLS 証明生成と検証
 - 実際の決済（USDC / Stripe）
-- 実際の取引所接続・自動売買
-- 本番レベルの認証・認可
-- UI（全て OpenClaw の会話 UI で操作）
+- 取引所 API 接続と自動売買
+- 永続ストレージを持つ platform backend
+- 本番向け認証・認可
+- Web UI の実装
 
 ---
 
-## システム構成
+## 体験アーキテクチャ
 
+### 現在の repo で動くもの
+
+```text
+┌─────────────────────┐        ┌────────────────────────────┐
+│ Creator OpenClaw    │───────▶│ nullifier-creator skill    │
+│                     │        │ └─ python3 script          │
+└─────────────────────┘        └────────────────────────────┘
+
+┌─────────────────────┐        ┌────────────────────────────┐
+│ Investor OpenClaw   │───────▶│ nullifier-investor skill   │
+│                     │        │ └─ python3 script          │
+└─────────────────────┘        └────────────────────────────┘
 ```
-┌─────────────────────┐  MCP (stdio)  ┌─────────────────────┐
-│ Creator の            │◀────────────▶│                     │
-│ OpenClaw             │               │                     │
-│                      │               │   Platform          │
-│ Skills:              │               │   (MCP Server)      │
-│ - nullifier-creator  │               │                     │
-└─────────────────────┘               │   - REST API        │
-                                       │   - WebSocket       │
-┌─────────────────────┐  MCP (stdio)  │   - SQLite DB       │
-│ Investor の          │◀────────────▶│   - Mock zkTLS      │
-│ OpenClaw             │               │                     │
-│                      │               └─────────────────────┘
-│ Skills:              │
-│ - nullifier-investor │
-└─────────────────────┘
-```
+
+- 2 つの skill は将来の platform action を模した thin wrapper として振る舞う
+- 応答は deterministic で、デモ中のブレを避ける
+- 実 network や backend 依存を外し、ピッチ時の再現性を優先する
+
+### 将来の target architecture
+
+`docs/architecture.jpg` が示す将来像は以下である。
+
+- Creator が戦略を公開し、zkTLS で成績を証明する
+- Investor / agent が証明済み戦略を検索し、投資し、シグナルを受信する
+- Platform が proof verification、allocation、signal distribution を仲介する
 
 ---
 
-## コンポーネント詳細
+## 公開コマンド面
 
-### 1. Platform（MCP Server）
+### Creator
 
-プラットフォームのバックエンド。MCP Server として動作し、Creator と Investor 双方の OpenClaw に MCP ツールを提供する。
+| コマンド | 役割 |
+| --- | --- |
+| `publish` | canonical strategy を公開する |
+| `update` | canonical metrics を更新する |
+| `proof create` | canonical proof 結果を返す |
+| `signal send` | canonical signal を送る |
+| `status` | strategy status / TVL / investor 数を見る |
+| `revenue` | creator revenue を見る |
+| `withdraw` | creator revenue を引き出す |
 
-#### 技術スタック
+### Investor
 
-| 項目           | 技術                             |
-| -------------- | -------------------------------- |
-| 言語           | TypeScript                       |
-| MCP SDK        | `@modelcontextprotocol/sdk`      |
-| トランスポート | stdio（ローカルデモ用）          |
-| DB             | SQLite（`better-sqlite3`）       |
-| シグナル配信   | インプロセス EventEmitter（MVP） |
-
-#### データモデル
-
-```sql
--- 戦略
-CREATE TABLE strategies (
-  id            TEXT PRIMARY KEY,
-  provider_id   TEXT NOT NULL,
-  name          TEXT NOT NULL,
-  description   TEXT,
-  asset_class   TEXT NOT NULL,  -- crypto, fx, us_equity, real_estate, prediction_market
-  apy           REAL,
-  pnl           REAL,
-  max_drawdown  REAL,
-  sharpe_ratio  REAL,
-  status        TEXT DEFAULT 'active',  -- active, paused, archived
-  proof_status  TEXT DEFAULT 'unverified',  -- unverified, verified, expired
-  proof_data    TEXT,  -- JSON: mock zkTLS proof
-  created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at    TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
--- ポジション
-CREATE TABLE positions (
-  id            TEXT PRIMARY KEY,
-  strategy_id   TEXT NOT NULL REFERENCES strategies(id),
-  investor_id   TEXT NOT NULL,
-  allocation    REAL NOT NULL,  -- USD
-  current_value REAL,
-  realized_pnl  REAL DEFAULT 0,
-  status        TEXT DEFAULT 'active',  -- active, paused, withdrawn
-  created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at    TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
--- シグナル
-CREATE TABLE signals (
-  id            TEXT PRIMARY KEY,
-  strategy_id   TEXT NOT NULL REFERENCES strategies(id),
-  action        TEXT NOT NULL,  -- buy, sell, hold
-  asset         TEXT NOT NULL,  -- e.g. BTC/USD, EUR/USD
-  price         REAL,
-  quantity      REAL,
-  confidence    REAL,  -- 0.0 - 1.0
-  reasoning     TEXT,
-  created_at    TEXT DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-#### MCP ツール一覧
-
-**Creator 向け**
-
-| ツール名       | 説明                                               |
-| -------------- | -------------------------------------------------- |
-| `publish`      | 新しい戦略を公開する                               |
-| `update`       | 戦略の情報（成績指標等）を更新する                 |
-| `proof_create` | 成績の zkTLS 証明を生成する（MVP ではモック）      |
-| `signal_send`  | 売買シグナルを発信する                             |
-| `status`       | 自分の戦略状態、TVL、investor 数を取得する         |
-| `revenue`      | creator revenue と withdrawable balance を取得する |
-| `withdraw`     | creator revenue を引き出す                         |
-
-**Investor 向け**
-
-| ツール名   | 説明                                                    |
-| ---------- | ------------------------------------------------------- |
-| `explore`  | 条件に合う戦略を検索する（APY, Max DD, asset_class 等） |
-| `verify`   | 戦略の zkTLS 証明を検証する（MVP ではモック検証）       |
-| `invest`   | 戦略に資金を投入する                                    |
-| `position` | 現在の評価額や PnL を取得する                           |
-| `earnings` | 確定利益と引き出し可能利益を取得する                    |
-| `withdraw` | earnings または元本の一部を引き出す                     |
-| `signals`  | 戦略のシグナル履歴または最新 signal を取得する          |
-
-**共通**
-
-| ツール名               | 説明                                 |
-| ---------------------- | ------------------------------------ |
-| `platform_status`      | プラットフォームの稼働状況を取得する |
-| `strategy_leaderboard` | 成績上位の戦略ランキングを取得する   |
-
-#### Mock zkTLS
-
-MVP では zkTLS を以下のようにモックする：
-
-```typescript
-// 証明生成（Creator が呼ぶ）
-function generateMockProof(
-  strategyId: string,
-  metrics: StrategyMetrics,
-): Proof {
-  return {
-    id: crypto.randomUUID(),
-    strategyId,
-    type: "mock_zktls_v1",
-    claims: {
-      apy: metrics.apy,
-      maxDrawdown: metrics.maxDrawdown,
-      sharpeRatio: metrics.sharpeRatio,
-      dataSource: "binance_api", // 模擬
-      attestedAt: new Date().toISOString(),
-    },
-    // 実際の zkTLS ではここに暗号学的証明が入る
-    signature: crypto.randomBytes(64).toString("hex"),
-    verified: true,
-  };
-}
-
-// 証明検証（Investor が呼ぶ）
-function verifyMockProof(proof: Proof): VerificationResult {
-  return {
-    valid: true,
-    message: "Mock proof verified successfully",
-    attestedSource: proof.claims.dataSource,
-    attestedAt: proof.claims.attestedAt,
-  };
-}
-```
+| コマンド | 役割 |
+| --- | --- |
+| `explore` | 条件に合う verified strategy を探す |
+| `verify` | proof-backed metrics を確認する |
+| `invest` | canonical strategy に配分する |
+| `position` | 現在の position を確認する |
+| `earnings` | realized / withdrawable earnings を確認する |
+| `withdraw` | earnings または principal を引き出す |
+| `signals` | 最新 signal を確認する |
 
 ---
 
-### 2. Creator 用 OpenClaw
+## デモシナリオ
 
-Creator が使用する OpenClaw インスタンス。Platform の MCP Server に接続し、戦略の公開・証明生成・シグナル発信を行う。
+### 20-second investor-first demo
 
-#### MCP 設定
+1. Investor 側で `explore` を実行する
+2. そのまま最上位 strategy に `invest` する
+3. 必要なら `verify` と `signals` を続けて見せる
 
-```json
-{
-  "mcpServers": {
-    "zkstrategy": {
-      "command": "node",
-      "args": ["./platform/dist/mcp-server.js"],
-      "env": {
-        "USER_ROLE": "creator",
-        "USER_ID": "creator_alice"
-      }
-    }
-  }
-}
+想定発話:
+
+```text
+APY 20% 以上、Max DD 10% 以下の crypto strategy を explore して、一番良いものに 25,000 USDC invest して
 ```
 
-#### Skill: `nullifier-creator`
+### Optional creator follow-up
 
-```yaml
----
-name: nullifier-creator
-description: |
-  Faithfully reproduce Nullifier creator commands such as publish, update,
-  proof create, signal send, status, revenue, and withdraw.
----
+1. Creator 側で `publish` する
+2. `status` と `revenue` を見せる
+3. 必要なら `proof create` と `signal send` を続ける
+
+想定発話:
+
+```text
+BTC のデルタニュートラル戦略を publish して。status と revenue も見せて
 ```
 
-Skill の指示内容：
+### Demo beat
 
-- command-first で creator action を案内する
-- `publish`, `update`, `proof create`, `signal send`, `status`, `revenue`, `withdraw` を公開する
-- 不足パラメータだけを短くヒアリングする
-- 固定レスポンス集ではなく、platform action の thin wrapper として振る舞う
-
-#### デモシナリオ（Creator）
-
-```
-Creator: 「BTC のデルタニュートラル戦略を publish して。APY 24.8%、Max DD -6.9%、シャープ 2.3」
-
-OpenClaw:
-  → publish を呼び出し
-  → 「BTC Delta Neutral Pool を publish しました」
-  → 「proof create も実行しますか？」
-
-Provider: 「はい」
-
-OpenClaw:
-  → proof_create を呼び出し
-  → 「proof を作成しました。APY 24.8%、Max DD -6.9% を verified として更新しました。」
-
-Creator: 「BTC/USD を 68,500 で buy signal を送って」
-
-OpenClaw:
-  → signal_send を呼び出し
-  → 「signal を送信しました。active investor に配信されます。」
-```
+| 秒数 | Creator | Investor |
+| --- | --- | --- |
+| 0-3 | - | explore + invest |
+| 3-8 | - | top strategy / metrics / allocation を確認 |
+| 8-12 | publish | - |
+| 12-16 | status / revenue | - |
+| 16-20 | signal send | signals |
 
 ---
 
-### 3. Investor 用 OpenClaw
+## リポジトリ構成
 
-Investor が使用する OpenClaw インスタンス。Platform の MCP Server に接続し、戦略の検索・検証・投資・シグナル受信を行う。
-
-#### MCP 設定
-
-```json
-{
-  "mcpServers": {
-    "zkstrategy": {
-      "command": "node",
-      "args": ["./platform/dist/mcp-server.js"],
-      "env": {
-        "USER_ROLE": "investor",
-        "USER_ID": "investor_bob"
-      }
-    }
-  }
-}
-```
-
-#### Skill: `nullifier-investor`
-
-```yaml
----
-name: nullifier-investor
-description: |
-  Faithfully reproduce Nullifier investor commands such as explore, verify,
-  invest, position, earnings, withdraw, and signals.
----
-```
-
-Skill の指示内容：
-
-- command-first で investor action を案内する
-- `explore`, `verify`, `invest`, `position`, `earnings`, `withdraw`, `signals` を公開する
-- ユーザーの投資条件（APY, Max DD, asset_class 等）だけをヒアリングする
-- 投資操作は `invest` / `withdraw` モデルで統一する
-
-#### デモシナリオ（Investor）
-
-```
-Investor: 「APY 20% 以上、DD 15% 以下の暗号通貨戦略を explore して」
-
-OpenClaw:
-  → explore を呼び出し
-  → 検索結果を表示:
-    1. BTC Momentum (APY: 35%, DD: -12%, Sharpe: 1.8) ✅ 証明済み
-    2. ETH Mean Reversion (APY: 28%, DD: -14%, Sharpe: 1.5) ✅ 証明済み
-    3. Crypto Multi-Factor (APY: 22%, DD: -10%, Sharpe: 2.1) ⏳ 未証明
-
-Investor: 「1 番の proof を verify して」
-
-OpenClaw:
-  → verify を呼び出し
-  → 「✅ 証明は有効です。Binance API データに基づき APY 35%、Max DD -12% が確認されています。」
-
-Investor: 「25,000 USDC invest して」
-
-OpenClaw:
-  → invest を呼び出し
-  → 「BTC Delta Neutral Pool に 25,000 USDC を投資しました。シグナル受信を開始します。」
-
---- （Creator がシグナルを発信した後） ---
-
-OpenClaw:
-  → signals を呼び出し
-  → 「🔔 新しいシグナル: BTC Momentum が BTC/USD を $68,500 で買い推奨
-      (confidence: 0.85, 理由: RSI が 30 を下回り反転シグナル)」
-```
-
----
-
-## ディレクトリ構成
-
-```
+```text
 ai-fund-platform/
+├── README.md
 ├── docs/
 │   ├── concept.md
-│   ├── prd.md                          ← 本ドキュメント
-│   └── ...
-├── platform/                            ← Platform (MCP Server)
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── src/
-│   │   ├── mcp-server.ts              ← MCP Server エントリポイント
-│   │   ├── tools/
-│   │   │   ├── creator-tools.ts      ← Creator 向けツール定義
-│   │   │   ├── investor-tools.ts     ← Investor 向けツール定義
-│   │   │   └── common-tools.ts        ← 共通ツール定義
-│   │   ├── db/
-│   │   │   ├── schema.ts             ← SQLite スキーマ定義
-│   │   │   └── index.ts              ← DB 初期化・クエリ
-│   │   ├── proof/
-│   │   │   └── mock-zktls.ts         ← Mock zkTLS 証明生成・検証
-│   │   └── signals/
-│   │       └── emitter.ts            ← シグナル配信ロジック
-│   └── dist/                          ← ビルド成果物
+│   ├── prd.md
+│   ├── openclaw-mock-demo.md
+│   └── architecture.jpg
 ├── skills/
-│   ├── nullifier-creator/             ← Creator 用 Skill
-│   │   └── SKILL.md
-│   └── nullifier-investor/            ← Investor 用 Skill
-│       └── SKILL.md
-├── configs/
-│   ├── creator.mcp.json              ← Creator の MCP 設定
-│   └── investor.mcp.json             ← Investor の MCP 設定
-└── demo/
-    ├── seed-data.ts                   ← デモ用の初期データ投入
-    └── README.md                      ← デモ実行手順
+│   ├── README.md
+│   ├── nullifier-creator/
+│   │   ├── SKILL.md
+│   │   └── scripts/nullifier_creator.py
+│   └── nullifier-investor/
+│       ├── SKILL.md
+│       └── scripts/nullifier_investor.py
+└── tests/
+    └── test_nullifier_skill_scripts.py
 ```
 
 ---
 
-## デモ実行フロー
+## デモ実行手順
 
-### 前提条件
-
-- Node.js 20+
-- OpenClaw がインストール済み（`npm install -g openclaw@latest`）
-
-### セットアップ
+### Install
 
 ```bash
-# 1. Platform をビルド
-cd platform && npm install && npm run build
-
-# 2. デモ用データを投入
-npx tsx demo/seed-data.ts
-
-# 3. Creator の OpenClaw を起動（ターミナル A）
-openclaw --mcp-config configs/creator.mcp.json --skills ./skills/nullifier-creator
-
-# 4. Investor の OpenClaw を起動（ターミナル B）
-openclaw --mcp-config configs/investor.mcp.json --skills ./skills/nullifier-investor
-
-# Optional: inspect or install public skills
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --list
 npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-investor
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-creator
 ```
 
-### デモストーリー
+### Launch
 
-| ステップ | 誰が     | 操作                                  | 使う MCP ツール |
-| -------- | -------- | ------------------------------------- | --------------- |
-| 1        | Creator  | 「FX 戦略を publish して」            | `publish`       |
-| 2        | Creator  | 「proof を作って」                    | `proof_create`  |
-| 3        | Investor | 「APY 20% 以上の戦略を explore して」 | `explore`       |
-| 4        | Investor | 「proof を verify して」              | `verify`        |
-| 5        | Investor | 「25,000 USDC invest して」           | `invest`        |
-| 6        | Creator  | 「EUR/USD の buy signal を送って」    | `signal_send`   |
-| 7        | Investor | （自動受信）                          | `signals`       |
+```bash
+openclaw --skills ./skills/nullifier-investor
+```
+
+必要なら Creator 側も起動する。
+
+```bash
+openclaw --skills ./skills/nullifier-creator
+```
+
+### Verification
+
+```bash
+python3 -m unittest tests/test_nullifier_skill_scripts.py
+```
 
 ---
 
 ## 成功基準
 
-| 基準               | 内容                                                                                |
-| ------------------ | ----------------------------------------------------------------------------------- |
-| **E2E フロー**     | Creator → 戦略公開 → 証明生成 → 投資 → シグナル発信 → Investor が受信、が一連で動く |
-| **MCP 接続**       | 2 つの OpenClaw インスタンスが同一 Platform の MCP Server に接続して動作する        |
-| **検索・フィルタ** | Investor が APY, Max DD, asset_class 等で戦略を検索できる                           |
-| **Mock 証明**      | 証明の生成・検証フローがデモとして成立する                                          |
-| **シグナル配信**   | Creator のシグナルが Investor にリアルタイムで届く                                  |
+| 基準 | 内容 |
+| --- | --- |
+| **自然な会話** | OpenClaw への自然言語入力だけで demo が成立する |
+| **20 秒以内** | investor-first pitch が短時間で再現できる |
+| **一貫した public naming** | `nullifier-creator` / `nullifier-investor` で docs と skills が一致する |
+| **再現性** | skill script の固定レスポンスにより毎回同じ結果になる |
+| **概念伝達** | strategy secrecy + proof-backed metrics + agent execution の価値が伝わる |
 
 ---
 
-## 将来の拡張（MVP 後）
+## 将来の拡張
 
-| フェーズ    | 内容                                              |
-| ----------- | ------------------------------------------------- |
-| **Phase 2** | 実際の zkTLS 統合（TLSNotary / Reclaim Protocol） |
-| **Phase 2** | オンチェーン証明検証（Base / Arbitrum）           |
-| **Phase 3** | USDC / Stripe による実決済                        |
-| **Phase 3** | 取引所 API 接続による自動売買                     |
-| **Phase 4** | マルチエージェント分析（RFS のエージェント群）    |
-| **Phase 4** | リスク管理 Hook                                   |
+- 実際の zkTLS integration
+- proof verification backend
+- signal distribution infrastructure
+- on-chain verification と settlement
+- real broker / exchange execution
+- multi-agent research and risk control hooks

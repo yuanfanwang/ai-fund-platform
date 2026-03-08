@@ -1,5 +1,21 @@
 ## Current Task
 
+- [x] Load project docs, task memory, and relevant skill instructions
+- [x] Inspect merge state and locate all `architecture.jpg` references
+- [x] Resolve `docs/prd.md` merge conflict against the current repo direction
+- [x] Update the broken `architecture.jpg` path
+- [x] Verify no conflict markers remain and record results
+
+## Review
+
+- Replaced the conflicted `docs/prd.md` with a clean merged PRD aligned to the current repo: installable `nullifier-*` skills plus the script-backed OpenClaw mock demo.
+- Fixed the broken image reference in `zkStrategy_Seed_Deck_Draft.md` to use `./docs/architecture.jpg`, which matches the actual file location.
+- Verified `docs/prd.md` has no remaining merge markers, `git diff --check` is clean, and `python3 -m unittest tests/test_nullifier_skill_scripts.py` passes.
+
+---
+
+## Current Task
+
 - [x] Load product and skill context
 - [x] Audit current skill structure
 - [x] Propose clearer skill design
