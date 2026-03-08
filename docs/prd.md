@@ -29,7 +29,7 @@
 
 - **Platform**: `node server.mjs` で起動する HTTP API。ポート 3456。
 - **OpenClaw**: Gateway 1 つ起動し、TUI を 2 セッション開く。
-- **Skills**: OpenClaw の Skill（SKILL.md）でエージェントの振る舞いを定義。エージェントは `exec` ツールで `curl` を叩いて Platform API を呼ぶ。
+- **Skills**: `~/Projects/openclaw/skills/` に配置。OpenClaw の Skill（SKILL.md）でエージェントの振る舞いを定義。エージェントは `exec` ツールで `curl` を叩いて Platform API を呼ぶ。
 
 ---
 
@@ -140,18 +140,19 @@ allowed-tools: ["exec"]
 ## ディレクトリ構成
 
 ```
-src/demo1/
+ai-fund-platform/src/demo1/          ← Platform（本リポジトリ）
 ├── platform/
 │   ├── package.json
-│   ├── server.mjs          ← HTTP API サーバー（1 ファイル）
-│   └── data.json            ← 共有データ
-├── skills/
-│   ├── strategy-provider/
-│   │   └── SKILL.md
-│   └── strategy-trader/
-│       └── SKILL.md
+│   ├── server.mjs                    ← HTTP API サーバー（1 ファイル）
+│   └── data.json                     ← 共有データ
 ├── reset-data.sh
 └── README.md
+
+~/Projects/openclaw/skills/           ← Skills（OpenClaw リポジトリ）
+├── strategy-provider/
+│   └── SKILL.md                      ← Creator 用 Skill
+└── strategy-trader/
+    └── SKILL.md                      ← Trader 用 Skill
 ```
 
 ---
