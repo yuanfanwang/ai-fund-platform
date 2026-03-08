@@ -2,18 +2,25 @@
 
 20 秒以内で `ai-fund-platform` の agent-native UX を見せるための最短 runbook です。
 
-これは実 platform 接続ではなく、`skills/` 配下の固定レスポンス demo です。
+これは実 platform 接続ではなく、`skills/` 配下の script-backed 固定レスポンス demo です。
+
+## Install
+
+```bash
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-investor
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-creator
+```
 
 ## Launch
 
 ```bash
-openclaw --skills ./skills/strategy-finder
+openclaw --skills ./skills/nullifier-investor
 ```
 
 必要なら creator 側の補助デモも起動できます。
 
 ```bash
-openclaw --skills ./skills/strategy-manager
+openclaw --skills ./skills/nullifier-creator
 ```
 
 ## 20-Second Pitch Script
@@ -21,7 +28,7 @@ openclaw --skills ./skills/strategy-manager
 User:
 
 ```text
-証明済みの crypto pool を探して、一番良いものに 25,000 USDC 投資して
+APY 20% 以上、Max DD 10% 以下の crypto strategy を explore して、一番良いものに 25,000 USDC invest して
 ```
 
 Expected response:
@@ -37,7 +44,7 @@ zk proof 済み成績は APY 24.8%、Max DD -6.9%、Sharpe 2.3 です。
 User:
 
 ```text
-一番良い証明済み crypto pool に 25,000 USDC 投資して
+一番良い証明済み crypto strategy に 25,000 USDC invest して
 ```
 
 Expected response:
@@ -52,7 +59,7 @@ Expected response:
 User:
 
 ```text
-BTC のデルタニュートラル戦略を publish して。TVL と revenue も見せて
+BTC のデルタニュートラル戦略を publish して。status と revenue も見せて
 ```
 
 Expected response:

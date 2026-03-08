@@ -1,19 +1,20 @@
-# Current Task
+## Current Task
 
-## Question
-
-Assess whether `zkTLS` or homomorphic encryption can support a strategy marketplace where creator-submitted strategies must actually be executed according to the declared strategy, especially across DEX, CEX, FX, and equities.
-
-## Plan
-
-- [x] Separate the proof problem from the execution-enforcement problem
-- [x] Compare DEX vs CEX/FX/equities execution trust models
-- [x] Recommend an MVP architecture and a long-term architecture
+- [x] Load product and skill context
+- [x] Audit current skill structure
+- [x] Propose clearer skill design
+- [x] Replace legacy skill names with `nullifier-creator` and `nullifier-investor`
+- [x] Rewrite both skill specs to command-first wrappers
+- [x] Remove `subscription` / `subscribe` interface language from primary docs
+- [x] Update demo runbook and examples to the new skill names and commands
+- [x] Make the repo consumable via `npx skills add <repo-or-url>`
+- [x] Run verification checks and record results
 
 ## Review
 
-- `zkTLS` / `zkFetch` fit proving external API facts and broker/exchange receipts, but not enforcing future strategy-faithful execution by themselves.
-- `FHE` is not the right primitive for custody or venue interaction; it is useful for computation on encrypted data, not for proving orders hit the market as intended.
-- For `DEX`, enforceability is realistic through smart contracts and on-chain vault logic.
-- For `CEX`, `FX`, and equities, the best achievable model today is restricted custody plus attested execution plus auditable broker receipts, not full trustlessness.
-- Recommended product path: start with verified performance + signal marketplace, then add DEX-native vaults, and only later consider managed-account execution for TradFi venues.
+- Replaced `skills/strategy-manager` and `skills/strategy-finder` with installable `nullifier-creator` and `nullifier-investor` skills.
+- Updated README and primary docs to use creator/investor naming and `invest` / `withdraw` terminology instead of subscription flows.
+- Verified `npx skills add ./skills --list` returns exactly the two public skills, and direct skill paths list one skill each.
+- Verified formatting on touched files with `prettier --check` and whitespace safety with `git diff --check`.
+- Refactored both public skills to bundled Python command runners so demo responses come from script stdout instead of free-form model narration.
+- Verified the script contract with `python3 -m unittest tests/test_nullifier_skill_scripts.py` and confirmed `codex exec` in an isolated skill-only directory runs the bundled scripts for demo prompts.

@@ -6,7 +6,7 @@ The goal is simple:
 
 - strategy creators keep their trading logic private
 - platform users verify performance without blind trust
-- AI agents discover, subscribe to, and execute strategies automatically
+- AI agents discover, invest in, and execute strategies automatically
 
 ![Platform architecture](./docs/architecture.jpg)
 
@@ -50,13 +50,13 @@ The proof can be verified, while the actual trading logic remains hidden.
 2. Keep the logic private or encrypted.
 3. Generate proofs for key performance metrics.
 4. Publish the strategy to the marketplace.
-5. Receive subscription revenue or performance-based fees.
+5. Receive strategy revenue or performance-based fees.
 
 ### Investor or agent flow
 
 1. Search strategies by verified metrics.
 2. Choose an allocation based on APY, PnL, and risk.
-3. Subscribe through an API, plugin, or MCP-compatible interface.
+3. Allocate capital through an API, plugin, or MCP-compatible interface.
 4. Receive signals and execute automatically.
 5. Take profit or rebalance into stronger strategies over time.
 
@@ -79,7 +79,7 @@ Agents are first-class users:
 
 - they can search for strategies programmatically
 - they can verify proofs before allocating capital
-- they can subscribe and pay autonomously
+- they can invest and pay autonomously
 - they can monitor signals and execute trades inside defined risk limits
 
 This makes the platform suitable for an autonomous capital allocation system, not only a manual copy-trading product.
@@ -113,6 +113,24 @@ This repository currently focuses on product and architecture documents.
 - [Japanese marketplace overview](./docs/zk-strategy-marketplace-ja.md)
 - [Chinese marketplace overview](./docs/zk-strategy-marketplace-zh.md)
 - [AI-native hedge fund RFS notes](./docs/ai-native-hedge-fund-rfs.md)
+
+## Installable Skills
+
+The repo also exposes installable agent skills under [`skills/`](./skills).
+These skills are script-backed, deterministic demo wrappers. After installation, the agent runs bundled `python3` commands and returns their stdout.
+
+```bash
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --list
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-creator
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-investor
+```
+
+You can also install from a direct skill path:
+
+```bash
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills/nullifier-creator
+npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills/nullifier-investor --list
+```
 
 ## Current Status
 
