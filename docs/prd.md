@@ -172,8 +172,8 @@ ai-fund-platform/
 ### Install
 
 ```bash
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-investor
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-creator
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills --skill nullifier-investor
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills --skill nullifier-creator
 ```
 
 ### Launch

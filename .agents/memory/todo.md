@@ -1,5 +1,20 @@
 ## Current Task
 
+- [x] Find all public `npx skills add` references using the old GitHub owner
+- [x] Update install examples to `yuanfanwang/ai-fund-platform`
+- [x] Record the correction pattern in `.agents/memory/lessons.md`
+- [x] Verify no stale install URLs remain
+
+## Review
+
+- Updated every public `npx skills add` example and direct skill-path example from `asumayamada/ai-fund-platform` to `yuanfanwang/ai-fund-platform`.
+- Touched `README.md`, `docs/prd.md`, `docs/openclaw-mock-demo.md`, and `skills/README.md` so the install instructions stay consistent.
+- Verified there are no stale owner references left in `README.md`, `docs/`, `skills/`, or `.agents/memory/`, and `git diff --check` is clean.
+
+---
+
+## Current Task
+
 - [x] Load project docs, task memory, and relevant skill instructions
 - [x] Inspect merge state and locate all `architecture.jpg` references
 - [x] Resolve `docs/prd.md` merge conflict against the current repo direction

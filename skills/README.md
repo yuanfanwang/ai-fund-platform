@@ -7,19 +7,19 @@ Each skill is self-contained and ships with bundled `python3` scripts for determ
 ## List available skills
 
 ```bash
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --list
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills --list
 ```
 
 ## Install a specific skill
 
 ```bash
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-creator
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-investor
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills --skill nullifier-creator
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills --skill nullifier-investor
 ```
 
 ## Install directly from a skill path
 
 ```bash
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills/nullifier-creator
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills/nullifier-investor
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills/nullifier-creator
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills/nullifier-investor
 ```

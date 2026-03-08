@@ -120,16 +120,16 @@ The repo also exposes installable agent skills under [`skills/`](./skills).
 These skills are script-backed, deterministic demo wrappers. After installation, the agent runs bundled `python3` commands and returns their stdout.
 
 ```bash
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --list
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-creator
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills --skill nullifier-investor
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills --list
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills --skill nullifier-creator
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills --skill nullifier-investor
 ```
 
 You can also install from a direct skill path:
 
 ```bash
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills/nullifier-creator
-npx skills add https://github.com/asumayamada/ai-fund-platform/tree/main/skills/nullifier-investor --list
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills/nullifier-creator
+npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills/nullifier-investor --list
 ```
 
 ## Current Status
