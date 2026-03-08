@@ -3,7 +3,7 @@
 ## 目的
 
 concept.md のコンセプトを動くデモとして実証する。
-Creator が戦略を公開し、Investor が検索・サブスク・シグナル受信するフローを、2つの OpenClaw インスタンスと1つの Platform を通じて End-to-End で動かす。
+Strategy Provider が戦略を公開し、Trader が検索・サブスク・シグナル受信するフローを、2つの OpenClaw インスタンスと1つの Platform を通じて End-to-End で動かす。
 
 ---
 
@@ -11,8 +11,8 @@ Creator が戦略を公開し、Investor が検索・サブスク・シグナル
 
 ### やること
 
-- Creator 用 OpenClaw から戦略を登録・シグナル発信
-- Investor 用 OpenClaw から戦略を検索・サブスク・シグナル受信
+- Strategy Provider 用 OpenClaw から戦略を登録・シグナル発信
+- Trader 用 OpenClaw から戦略を検索・サブスク・シグナル受信
 - Platform が MCP Server として両者を仲介
 - zkTLS 証明は **モック**（デモ用にダミー証明を生成・検証）
 - 戦略の成績指標（APY, PnL, Max DD）の表示
@@ -31,21 +31,21 @@ Creator が戦略を公開し、Investor が検索・サブスク・シグナル
 ## システム構成
 
 ```
-┌─────────────────┐     MCP (stdio)     ┌─────────────────────┐
-│ Creator の       │◀───────────────────▶│                     │
-│ OpenClaw        │                      │                     │
-│                 │                      │   Platform          │
-│ Skills:         │                      │   (MCP Server)      │
-│ - strategy-mgr  │                      │                     │
-└─────────────────┘                      │   - REST API        │
-                                         │   - WebSocket       │
-┌─────────────────┐     MCP (stdio)     │   - SQLite DB       │
-│ Investor の      │◀───────────────────▶│   - Mock zkTLS      │
-│ OpenClaw        │                      │                     │
-│                 │                      └─────────────────────┘
-│ Skills:         │
-│ - strategy-find │
-└─────────────────┘
+┌─────────────────────┐  MCP (stdio)  ┌─────────────────────┐
+│ Strategy Provider の  │◀────────────▶│                     │
+│ OpenClaw             │               │                     │
+│                      │               │   Platform          │
+│ Skills:              │               │   (MCP Server)      │
+│ - strategy-provider  │               │                     │
+└─────────────────────┘               │   - REST API        │
+                                       │   - WebSocket       │
+┌─────────────────────┐  MCP (stdio)  │   - SQLite DB       │
+│ Trader の            │◀────────────▶│   - Mock zkTLS      │
+│ OpenClaw             │               │                     │
+│                      │               └─────────────────────┘
+│ Skills:              │
+│ - strategy-trader    │
+└─────────────────────┘
 ```
 
 ---
@@ -54,7 +54,7 @@ Creator が戦略を公開し、Investor が検索・サブスク・シグナル
 
 ### 1. Platform（MCP Server）
 
-プラットフォームのバックエンド。MCP Server として動作し、Creator と Investor 双方の OpenClaw に MCP ツールを提供する。
+プラットフォームのバックエンド。MCP Server として動作し、Strategy Provider と Trader 双方の OpenClaw に MCP ツールを提供する。
 
 #### 技術スタック
 
@@ -72,7 +72,7 @@ Creator が戦略を公開し、Investor が検索・サブスク・シグナル
 -- 戦略
 CREATE TABLE strategies (
   id            TEXT PRIMARY KEY,
-  creator_id    TEXT NOT NULL,
+  provider_id   TEXT NOT NULL,
   name          TEXT NOT NULL,
   description   TEXT,
   asset_class   TEXT NOT NULL,  -- crypto, fx, us_equity, real_estate, prediction_market
@@ -91,7 +91,7 @@ CREATE TABLE strategies (
 CREATE TABLE subscriptions (
   id            TEXT PRIMARY KEY,
   strategy_id   TEXT NOT NULL REFERENCES strategies(id),
-  investor_id   TEXT NOT NULL,
+  trader_id     TEXT NOT NULL,
   allocation    REAL NOT NULL,  -- USD
   status        TEXT DEFAULT 'active',  -- active, paused, cancelled
   created_at    TEXT DEFAULT CURRENT_TIMESTAMP
@@ -113,7 +113,7 @@ CREATE TABLE signals (
 
 #### MCP ツール一覧
 
-**Creator 向け**
+**Strategy Provider 向け**
 
 | ツール名 | 説明 |
 |---|---|
@@ -124,7 +124,7 @@ CREATE TABLE signals (
 | `strategy_my_list` | 自分が登録した戦略の一覧を取得する |
 | `strategy_subscribers` | 自分の戦略のサブスクライバー一覧を取得する |
 
-**Investor 向け**
+**Trader 向け**
 
 | ツール名 | 説明 |
 |---|---|
@@ -148,7 +148,7 @@ CREATE TABLE signals (
 MVP では zkTLS を以下のようにモックする：
 
 ```typescript
-// 証明生成（Creator が呼ぶ）
+// 証明生成（Strategy Provider が呼ぶ）
 function generateMockProof(strategyId: string, metrics: StrategyMetrics): Proof {
   return {
     id: crypto.randomUUID(),
@@ -167,7 +167,7 @@ function generateMockProof(strategyId: string, metrics: StrategyMetrics): Proof 
   };
 }
 
-// 証明検証（Investor が呼ぶ）
+// 証明検証（Trader が呼ぶ）
 function verifyMockProof(proof: Proof): VerificationResult {
   return {
     valid: true,
@@ -180,7 +180,7 @@ function verifyMockProof(proof: Proof): VerificationResult {
 
 ---
 
-### 2. Creator 用 OpenClaw
+### 2. Strategy Provider 用 OpenClaw
 
 戦略提供者が使用する OpenClaw インスタンス。Platform の MCP Server に接続し、戦略の登録・シグナル発信を行う。
 
@@ -193,19 +193,19 @@ function verifyMockProof(proof: Proof): VerificationResult {
       "command": "node",
       "args": ["./platform/dist/mcp-server.js"],
       "env": {
-        "USER_ROLE": "creator",
-        "USER_ID": "creator_alice"
+        "USER_ROLE": "provider",
+        "USER_ID": "provider_alice"
       }
     }
   }
 }
 ```
 
-#### Skill: `strategy-manager`
+#### Skill: `strategy-provider`
 
 ```yaml
 ---
-name: strategy-manager
+name: strategy-provider
 description: |
   Manage your trading strategies on the Autonomous Hedge Fund Platform.
   Register strategies, generate performance proofs, and emit trading signals.
@@ -218,23 +218,23 @@ Skill の指示内容：
 - シグナル発信時に action, asset, price, quantity, confidence, reasoning を収集
 - サブスクライバー数や収益の確認
 
-#### デモシナリオ（Creator）
+#### デモシナリオ（Strategy Provider）
 
 ```
-Creator: 「BTC のモメンタム戦略を登録して。APY 35%、Max DD -12%、シャープ 1.8」
+Provider: 「BTC のモメンタム戦略を登録して。APY 35%、Max DD -12%、シャープ 1.8」
 
 OpenClaw:
   → strategy_register を呼び出し
   → 「戦略 "BTC Momentum" を登録しました (ID: strat_xxx)」
   → 「zkTLS 証明を生成しますか？」
 
-Creator: 「はい」
+Provider: 「はい」
 
 OpenClaw:
   → strategy_generate_proof を呼び出し
   → 「証明を生成しました。APY 35%, Max DD -12% が Binance データで確認済みです。」
 
-Creator: 「BTC を $68,500 で買いシグナルを出して」
+Provider: 「BTC を $68,500 で買いシグナルを出して」
 
 OpenClaw:
   → signal_emit を呼び出し
@@ -243,9 +243,9 @@ OpenClaw:
 
 ---
 
-### 3. Investor 用 OpenClaw
+### 3. Trader 用 OpenClaw
 
-投資家が使用する OpenClaw インスタンス。Platform の MCP Server に接続し、戦略の検索・サブスク・シグナル受信を行う。
+トレーダーが使用する OpenClaw インスタンス。Platform の MCP Server に接続し、戦略の検索・サブスク・シグナル受信を行う。
 
 #### MCP 設定
 
@@ -256,19 +256,19 @@ OpenClaw:
       "command": "node",
       "args": ["./platform/dist/mcp-server.js"],
       "env": {
-        "USER_ROLE": "investor",
-        "USER_ID": "investor_bob"
+        "USER_ROLE": "trader",
+        "USER_ID": "trader_bob"
       }
     }
   }
 }
 ```
 
-#### Skill: `strategy-finder`
+#### Skill: `strategy-trader`
 
 ```yaml
 ---
-name: strategy-finder
+name: strategy-trader
 description: |
   Discover, verify, and subscribe to trading strategies on the Autonomous Hedge Fund Platform.
   Search by performance metrics, verify zkTLS proofs, and receive trading signals.
@@ -281,10 +281,10 @@ Skill の指示内容：
 - サブスク前に必ず zkTLS 証明の検証を提案
 - シグナル受信時に内容を要約し、投資判断の参考情報を付加
 
-#### デモシナリオ（Investor）
+#### デモシナリオ（Trader）
 
 ```
-Investor: 「APY 20% 以上、DD 15% 以下の暗号通貨戦略を探して」
+Trader: 「APY 20% 以上、DD 15% 以下の暗号通貨戦略を探して」
 
 OpenClaw:
   → strategy_search を呼び出し
@@ -293,19 +293,19 @@ OpenClaw:
     2. ETH Mean Reversion (APY: 28%, DD: -14%, Sharpe: 1.5) ✅ 証明済み
     3. Crypto Multi-Factor (APY: 22%, DD: -10%, Sharpe: 2.1) ⏳ 未証明
 
-Investor: 「1 番の証明を検証して」
+Trader: 「1 番の証明を検証して」
 
 OpenClaw:
   → strategy_verify_proof を呼び出し
   → 「✅ 証明は有効です。Binance API データに基づき APY 35%、Max DD -12% が確認されています。」
 
-Investor: 「サブスクして。$10,000 で」
+Trader: 「サブスクして。$10,000 で」
 
 OpenClaw:
   → strategy_subscribe を呼び出し
   → 「BTC Momentum をサブスクしました。$10,000 を配分。シグナルの受信を開始します。」
 
---- （Creator がシグナルを発信した後） ---
+--- （Strategy Provider がシグナルを発信した後） ---
 
 OpenClaw:
   → signal_listen でシグナルを受信
@@ -329,8 +329,8 @@ ai-fund-platform/
 │   ├── src/
 │   │   ├── mcp-server.ts              ← MCP Server エントリポイント
 │   │   ├── tools/
-│   │   │   ├── creator-tools.ts       ← Creator 向けツール定義
-│   │   │   ├── investor-tools.ts      ← Investor 向けツール定義
+│   │   │   ├── provider-tools.ts     ← Strategy Provider 向けツール定義
+│   │   │   ├── trader-tools.ts       ← Trader 向けツール定義
 │   │   │   └── common-tools.ts        ← 共通ツール定義
 │   │   ├── db/
 │   │   │   ├── schema.ts             ← SQLite スキーマ定義
@@ -341,13 +341,13 @@ ai-fund-platform/
 │   │       └── emitter.ts            ← シグナル配信ロジック
 │   └── dist/                          ← ビルド成果物
 ├── skills/
-│   ├── strategy-manager/              ← Creator 用 Skill
+│   ├── strategy-provider/             ← Strategy Provider 用 Skill
 │   │   └── SKILL.md
-│   └── strategy-finder/               ← Investor 用 Skill
+│   └── strategy-trader/               ← Trader 用 Skill
 │       └── SKILL.md
 ├── configs/
-│   ├── creator.mcp.json              ← Creator の MCP 設定
-│   └── investor.mcp.json             ← Investor の MCP 設定
+│   ├── provider.mcp.json             ← Strategy Provider の MCP 設定
+│   └── trader.mcp.json               ← Trader の MCP 設定
 └── demo/
     ├── seed-data.ts                   ← デモ用の初期データ投入
     └── README.md                      ← デモ実行手順
@@ -371,24 +371,24 @@ cd platform && npm install && npm run build
 # 2. デモ用データを投入
 npx tsx demo/seed-data.ts
 
-# 3. Creator の OpenClaw を起動（ターミナル A）
-openclaw --mcp-config configs/creator.mcp.json --skills ./skills/strategy-manager
+# 3. Strategy Provider の OpenClaw を起動（ターミナル A）
+openclaw --mcp-config configs/provider.mcp.json --skills ./skills/strategy-provider
 
-# 4. Investor の OpenClaw を起動（ターミナル B）
-openclaw --mcp-config configs/investor.mcp.json --skills ./skills/strategy-finder
+# 4. Trader の OpenClaw を起動（ターミナル B）
+openclaw --mcp-config configs/trader.mcp.json --skills ./skills/strategy-trader
 ```
 
 ### デモストーリー
 
 | ステップ | 誰が | 操作 | 使う MCP ツール |
 |---|---|---|---|
-| 1 | Creator | 「FX 戦略を登録して」 | `strategy_register` |
-| 2 | Creator | 「証明を生成して」 | `strategy_generate_proof` |
-| 3 | Investor | 「APY 20% 以上の戦略を探して」 | `strategy_search` |
-| 4 | Investor | 「証明を検証して」 | `strategy_verify_proof` |
-| 5 | Investor | 「サブスクして」 | `strategy_subscribe` |
-| 6 | Creator | 「EUR/USD の買いシグナルを出して」 | `signal_emit` |
-| 7 | Investor | （自動受信） | `signal_listen` |
+| 1 | Provider | 「FX 戦略を登録して」 | `strategy_register` |
+| 2 | Provider | 「証明を生成して」 | `strategy_generate_proof` |
+| 3 | Trader | 「APY 20% 以上の戦略を探して」 | `strategy_search` |
+| 4 | Trader | 「証明を検証して」 | `strategy_verify_proof` |
+| 5 | Trader | 「サブスクして」 | `strategy_subscribe` |
+| 6 | Provider | 「EUR/USD の買いシグナルを出して」 | `signal_emit` |
+| 7 | Trader | （自動受信） | `signal_listen` |
 
 ---
 
@@ -396,11 +396,11 @@ openclaw --mcp-config configs/investor.mcp.json --skills ./skills/strategy-finde
 
 | 基準 | 内容 |
 |---|---|
-| **E2E フロー** | Creator → 戦略登録 → 証明生成 → シグナル発信 → Investor が受信、が一連で動く |
+| **E2E フロー** | Provider → 戦略登録 → 証明生成 → シグナル発信 → Trader が受信、が一連で動く |
 | **MCP 接続** | 2 つの OpenClaw インスタンスが同一 Platform の MCP Server に接続して動作する |
-| **検索・フィルタ** | Investor が APY, Max DD, asset_class 等で戦略を検索できる |
+| **検索・フィルタ** | Trader が APY, Max DD, asset_class 等で戦略を検索できる |
 | **Mock 証明** | 証明の生成・検証フローがデモとして成立する |
-| **シグナル配信** | Creator のシグナルが Investor にリアルタイムで届く |
+| **シグナル配信** | Provider のシグナルが Trader にリアルタイムで届く |
 
 ---
 
