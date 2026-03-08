@@ -8,7 +8,7 @@ The goal is simple:
 - platform users verify performance without blind trust
 - AI agents discover, subscribe to, and execute strategies automatically
 
-![Platform architecture](./architecture.jpg)
+![Platform architecture](./docs/architecture.jpg)
 
 ## What Problem Does This Solve?
 
