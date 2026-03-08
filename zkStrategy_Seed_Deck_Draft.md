@@ -31,7 +31,7 @@ Even for traditional hedge funds, they can only discover alpha through their int
 ---
 
 ## Slide 3: Solution
-![architecture](architecture.png)
+![architecture](architecture.jpg)
 NULLIFIER Hudge Fund is a strategy marketplace where:
 
 1. **Strategy providers prove their real exchange performance using zkTLS** — a cryptographic protocol that verifies TLS (HTTPS) responses from exchanges. Proof of returns without revealing a single trade.
