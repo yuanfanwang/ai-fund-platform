@@ -28,8 +28,8 @@ class NullifierCreatorScriptTests(unittest.TestCase):
             result.stdout.strip(),
             "\n".join(
                 [
-                    "BTC Delta Neutral Pool を publish しました。zk proof 付き成績を公開済みです。",
-                    "公開メトリクスは APY 24.8%、Max DD -6.9%、Sharpe 2.3 です。",
+                    "Published BTC Delta Neutral Pool with proof-backed performance.",
+                    "Public metrics: APY 24.8%, Max DD -6.9%, Sharpe 2.3.",
                 ]
             ),
         )
@@ -42,8 +42,8 @@ class NullifierCreatorScriptTests(unittest.TestCase):
             result.stdout.strip(),
             "\n".join(
                 [
-                    "BTC Delta Neutral Pool は active です。proof status は verified です。",
-                    "現在の TVL は 1.84M USDC、investor 数は 128 です。",
+                    "BTC Delta Neutral Pool is active. Proof status is verified.",
+                    "Current TVL is 1.84M USDC with 128 investors.",
                 ]
             ),
         )
@@ -56,8 +56,8 @@ class NullifierCreatorScriptTests(unittest.TestCase):
             result.stdout.strip(),
             "\n".join(
                 [
-                    "累計 revenue は 42,380 USDC です。",
-                    "withdraw 可能額は 18,240 USDC です。",
+                    "Total creator revenue is 42,380 USDC.",
+                    "Withdrawable revenue is 18,240 USDC.",
                 ]
             ),
         )
@@ -70,8 +70,8 @@ class NullifierCreatorScriptTests(unittest.TestCase):
             result.stdout.strip(),
             "\n".join(
                 [
-                    "creator revenue から 10,000 USDC の withdraw を受け付けました。",
-                    "withdraw 可能残高は 8,240 USDC です。",
+                    "Accepted a 10,000 USDC creator revenue withdrawal.",
+                    "Remaining withdrawable balance is 8,240 USDC.",
                 ]
             ),
         )
@@ -95,8 +95,8 @@ class NullifierInvestorScriptTests(unittest.TestCase):
             result.stdout.strip(),
             "\n".join(
                 [
-                    "条件に合う strategy を 3 件見つけました。最上位は BTC Delta Neutral Pool です。",
-                    "zk proof 済み成績は APY 24.8%、Max DD -6.9%、Sharpe 2.3 です。",
+                    "Found 3 matching strategies. The top result is BTC Delta Neutral Pool.",
+                    "Verified metrics: APY 24.8%, Max DD -6.9%, Sharpe 2.3.",
                 ]
             ),
         )
@@ -118,8 +118,8 @@ class NullifierInvestorScriptTests(unittest.TestCase):
             result.stdout.strip(),
             "\n".join(
                 [
-                    "25,000 USDC を BTC Delta Neutral Pool に invest しました。",
-                    "現在評価額は 26,420 USDC、含み益は +1,120 USDC、確定益は 300 USDC です。",
+                    "Invested 25,000 USDC into BTC Delta Neutral Pool.",
+                    "Current value is 26,420 USDC, unrealized PnL is +1,120 USDC, and realized earnings are 300 USDC.",
                 ]
             ),
         )
@@ -132,8 +132,8 @@ class NullifierInvestorScriptTests(unittest.TestCase):
             result.stdout.strip(),
             "\n".join(
                 [
-                    "earnings から 1,000 USDC の withdraw を受け付けました。",
-                    "残りの引き出し可能額は 540 USDC です。",
+                    "Accepted a 1,000 USDC earnings withdrawal.",
+                    "Remaining withdrawable earnings are 540 USDC.",
                 ]
             ),
         )

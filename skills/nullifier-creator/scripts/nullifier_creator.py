@@ -17,8 +17,8 @@ def format_amount(value: Decimal) -> str:
 def publish(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "BTC Delta Neutral Pool を publish しました。zk proof 付き成績を公開済みです。",
-            "公開メトリクスは APY 24.8%、Max DD -6.9%、Sharpe 2.3 です。",
+            "Published BTC Delta Neutral Pool with proof-backed performance.",
+            "Public metrics: APY 24.8%, Max DD -6.9%, Sharpe 2.3.",
         ]
     )
 
@@ -26,8 +26,8 @@ def publish(_: argparse.Namespace) -> str:
 def update(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "BTC Delta Neutral Pool を update しました。",
-            "最新メトリクスは APY 24.8%、PnL +412,000 USDC、Max DD -6.9% です。",
+            "Updated BTC Delta Neutral Pool.",
+            "Latest metrics: APY 24.8%, PnL +412,000 USDC, Max DD -6.9%.",
         ]
     )
 
@@ -35,8 +35,8 @@ def update(_: argparse.Namespace) -> str:
 def proof_create(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "BTC Delta Neutral Pool の proof を作成しました。",
-            "APY 24.8%、Max DD -6.9%、Sharpe 2.3 を証明済みとして更新しました。",
+            "Created a proof for BTC Delta Neutral Pool.",
+            "Marked APY 24.8%, Max DD -6.9%, and Sharpe 2.3 as verified.",
         ]
     )
 
@@ -48,8 +48,8 @@ def signal_send(args: argparse.Namespace) -> str:
     confidence = args.confidence or "0.85"
     return "\n".join(
         [
-            "BTC Delta Neutral Pool の signal を送信しました。",
-            f"配信内容は {asset} {action}、price {price}、confidence {confidence} として扱います。",
+            "Sent a signal for BTC Delta Neutral Pool.",
+            f"Signal payload: {asset} {action} at {price} with confidence {confidence}.",
         ]
     )
 
@@ -57,8 +57,8 @@ def signal_send(args: argparse.Namespace) -> str:
 def status(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "BTC Delta Neutral Pool は active です。proof status は verified です。",
-            "現在の TVL は 1.84M USDC、investor 数は 128 です。",
+            "BTC Delta Neutral Pool is active. Proof status is verified.",
+            "Current TVL is 1.84M USDC with 128 investors.",
         ]
     )
 
@@ -66,8 +66,8 @@ def status(_: argparse.Namespace) -> str:
 def revenue(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "累計 revenue は 42,380 USDC です。",
-            "withdraw 可能額は 18,240 USDC です。",
+            "Total creator revenue is 42,380 USDC.",
+            "Withdrawable revenue is 18,240 USDC.",
         ]
     )
 
@@ -77,8 +77,8 @@ def withdraw(args: argparse.Namespace) -> str:
     remaining = max(Decimal("0"), WITHDRAWABLE_REVENUE - amount)
     return "\n".join(
         [
-            f"creator revenue から {format_amount(amount)} USDC の withdraw を受け付けました。",
-            f"withdraw 可能残高は {format_amount(remaining)} USDC です。",
+            f"Accepted a {format_amount(amount)} USDC creator revenue withdrawal.",
+            f"Remaining withdrawable balance is {format_amount(remaining)} USDC.",
         ]
     )
 

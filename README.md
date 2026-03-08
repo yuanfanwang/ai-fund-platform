@@ -118,6 +118,7 @@ This repository currently focuses on product and architecture documents.
 
 The repo also exposes installable agent skills under [`skills/`](./skills).
 These skills are script-backed, deterministic demo wrappers. After installation, the agent runs bundled `python3` commands and returns their stdout.
+All public demo skill output is in English.
 
 ```bash
 npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills --list
@@ -130,6 +131,48 @@ You can also install from a direct skill path:
 ```bash
 npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills/nullifier-creator
 npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills/nullifier-investor --list
+```
+
+## Demo Prompts
+
+These are the exact prompts a user can type during a demo.
+
+### Investor Demo
+
+```text
+Explore crypto strategies with APY above 20% and Max DD below 10%, then invest 25,000 USDC in the best one.
+```
+
+Short variant:
+
+```text
+Invest 25,000 USDC in the best verified crypto strategy.
+```
+
+Optional follow-ups:
+
+```text
+Verify the proof for the top strategy.
+Show my current position.
+Show my earnings.
+Withdraw 1,000 USDC from earnings.
+Show the latest signals.
+```
+
+### Creator Demo
+
+```text
+Publish the BTC delta-neutral strategy. Also show status and revenue.
+```
+
+Optional follow-ups:
+
+```text
+Create a proof for that strategy.
+Send a BTC/USD buy signal at 68,500 with confidence 0.85.
+Show status.
+Show revenue.
+Withdraw 10,000 USDC from creator revenue.
 ```
 
 ## Current Status

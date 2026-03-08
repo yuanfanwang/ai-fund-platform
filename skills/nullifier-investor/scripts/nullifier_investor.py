@@ -17,8 +17,8 @@ def format_amount(value: Decimal) -> str:
 def explore(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "条件に合う strategy を 3 件見つけました。最上位は BTC Delta Neutral Pool です。",
-            "zk proof 済み成績は APY 24.8%、Max DD -6.9%、Sharpe 2.3 です。",
+            "Found 3 matching strategies. The top result is BTC Delta Neutral Pool.",
+            "Verified metrics: APY 24.8%, Max DD -6.9%, Sharpe 2.3.",
         ]
     )
 
@@ -26,8 +26,8 @@ def explore(_: argparse.Namespace) -> str:
 def verify(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "BTC Delta Neutral Pool の proof は有効です。",
-            "APY 24.8%、Max DD -6.9%、Sharpe 2.3 が確認されています。",
+            "The proof for BTC Delta Neutral Pool is valid.",
+            "Confirmed APY 24.8%, Max DD -6.9%, and Sharpe 2.3.",
         ]
     )
 
@@ -37,8 +37,8 @@ def invest(args: argparse.Namespace) -> str:
     asset = args.asset or "USDC"
     return "\n".join(
         [
-            f"{format_amount(amount)} {asset} を BTC Delta Neutral Pool に invest しました。",
-            "現在評価額は 26,420 USDC、含み益は +1,120 USDC、確定益は 300 USDC です。",
+            f"Invested {format_amount(amount)} {asset} into BTC Delta Neutral Pool.",
+            "Current value is 26,420 USDC, unrealized PnL is +1,120 USDC, and realized earnings are 300 USDC.",
         ]
     )
 
@@ -46,8 +46,8 @@ def invest(args: argparse.Namespace) -> str:
 def position(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "現在評価額は 26,420 USDC です。",
-            "含み益は +1,120 USDC、投下元本は 25,000 USDC です。",
+            "Current value is 26,420 USDC.",
+            "Unrealized PnL is +1,120 USDC and invested principal is 25,000 USDC.",
         ]
     )
 
@@ -55,8 +55,8 @@ def position(_: argparse.Namespace) -> str:
 def earnings(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "確定益は 300 USDC です。",
-            "引き出し可能な earnings は 1,540 USDC です。",
+            "Realized earnings are 300 USDC.",
+            "Withdrawable earnings are 1,540 USDC.",
         ]
     )
 
@@ -67,16 +67,16 @@ def withdraw(args: argparse.Namespace) -> str:
     if source == "principal":
         return "\n".join(
             [
-                f"元本から {format_amount(amount)} USDC の部分 withdraw を受け付けました。",
-                "残りのポジション評価額は 26,420 USDC から該当額を差し引いた扱いにしてください。",
+                f"Accepted a {format_amount(amount)} USDC principal withdrawal.",
+                "Treat the remaining position value as 26,420 USDC minus the withdrawn amount.",
             ]
         )
 
     remaining = max(Decimal("0"), WITHDRAWABLE_EARNINGS - amount)
     return "\n".join(
         [
-            f"earnings から {format_amount(amount)} USDC の withdraw を受け付けました。",
-            f"残りの引き出し可能額は {format_amount(remaining)} USDC です。",
+            f"Accepted a {format_amount(amount)} USDC earnings withdrawal.",
+            f"Remaining withdrawable earnings are {format_amount(remaining)} USDC.",
         ]
     )
 
@@ -84,8 +84,8 @@ def withdraw(args: argparse.Namespace) -> str:
 def signals(_: argparse.Namespace) -> str:
     return "\n".join(
         [
-            "最新 signal は BTC/USD buy、price 68,500、confidence 0.85 です。",
-            "戦略は引き続き active として配信中です。",
+            "Latest signal: BTC/USD buy at 68,500 with confidence 0.85.",
+            "The strategy remains active and is still broadcasting signals.",
         ]
     )
 

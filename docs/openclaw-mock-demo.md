@@ -1,8 +1,8 @@
 # OpenClaw Mock Demo
 
-20 秒以内で `ai-fund-platform` の agent-native UX を見せるための最短 runbook です。
+This is the shortest runbook for showing the `ai-fund-platform` agent-native UX in under 20 seconds.
 
-これは実 platform 接続ではなく、`skills/` 配下の script-backed 固定レスポンス demo です。
+This is not a live platform integration. It is a script-backed fixed-response demo powered by the skills under `skills/`.
 
 ## Install
 
@@ -17,7 +17,7 @@ npx skills add https://github.com/yuanfanwang/ai-fund-platform/tree/main/skills 
 openclaw --skills ./skills/nullifier-investor
 ```
 
-必要なら creator 側の補助デモも起動できます。
+If needed, you can also launch the creator-side companion demo.
 
 ```bash
 openclaw --skills ./skills/nullifier-creator
@@ -28,15 +28,17 @@ openclaw --skills ./skills/nullifier-creator
 User:
 
 ```text
-APY 20% 以上、Max DD 10% 以下の crypto strategy を explore して、一番良いものに 25,000 USDC invest して
+Explore crypto strategies with APY above 20% and Max DD below 10%, then invest 25,000 USDC in the best one.
 ```
 
 Expected response:
 
 ```text
-3件見つかりました。最上位は BTC Delta Neutral Pool です。
-zk proof 済み成績は APY 24.8%、Max DD -6.9%、Sharpe 2.3 です。
-25,000 USDC を投資しました。現在評価額は 26,420 USDC です。
+Found 3 matching strategies. The top result is BTC Delta Neutral Pool.
+Verified metrics: APY 24.8%, Max DD -6.9%, Sharpe 2.3.
+
+Invested 25,000 USDC into BTC Delta Neutral Pool.
+Current value is 26,420 USDC, unrealized PnL is +1,120 USDC, and realized earnings are 300 USDC.
 ```
 
 ## 10-Second Variant
@@ -44,14 +46,16 @@ zk proof 済み成績は APY 24.8%、Max DD -6.9%、Sharpe 2.3 です。
 User:
 
 ```text
-一番良い証明済み crypto strategy に 25,000 USDC invest して
+Invest 25,000 USDC in the best verified crypto strategy.
 ```
 
 Expected response:
 
 ```text
-最上位は BTC Delta Neutral Pool です。
-25,000 USDC を投資しました。現在評価額は 26,420 USDC です。
+The top result is BTC Delta Neutral Pool.
+
+Invested 25,000 USDC into BTC Delta Neutral Pool.
+Current value is 26,420 USDC, unrealized PnL is +1,120 USDC, and realized earnings are 300 USDC.
 ```
 
 ## Optional Creator Follow-Up
@@ -59,13 +63,18 @@ Expected response:
 User:
 
 ```text
-BTC のデルタニュートラル戦略を publish して。status と revenue も見せて
+Publish the BTC delta-neutral strategy. Also show status and revenue.
 ```
 
 Expected response:
 
 ```text
-BTC Delta Neutral Pool を publish しました。zk proof 付き成績を公開済みです。
-現在の TVL は 1.84M USDC、investor 数は 128 です。
-累計 revenue は 42,380 USDC、withdraw 可能額は 18,240 USDC です。
+Published BTC Delta Neutral Pool with proof-backed performance.
+Public metrics: APY 24.8%, Max DD -6.9%, Sharpe 2.3.
+
+BTC Delta Neutral Pool is active. Proof status is verified.
+Current TVL is 1.84M USDC with 128 investors.
+
+Total creator revenue is 42,380 USDC.
+Withdrawable revenue is 18,240 USDC.
 ```

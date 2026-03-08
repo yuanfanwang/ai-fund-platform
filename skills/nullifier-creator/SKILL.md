@@ -12,6 +12,7 @@ This skill is intentionally deterministic for demos:
 - Do not inspect repo docs, memory files, or unrelated project files before running the script.
 - Do not invent metrics, IDs, balances, fees, or extra explanation.
 - Do not paraphrase script output.
+- Always return English output.
 - If the user asks for multiple creator actions, run the matching scripts in request order and concatenate stdout blocks with a single blank line.
 
 ## Supported Commands
@@ -48,7 +49,7 @@ Example:
 User:
 
 ```text
-BTC のデルタニュートラル戦略を publish して。status と revenue も見せて
+Publish the BTC delta-neutral strategy. Also show status and revenue.
 ```
 
 Run:

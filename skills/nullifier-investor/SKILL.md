@@ -12,6 +12,7 @@ This skill is intentionally deterministic for demos:
 - Do not inspect repo docs, memory files, or unrelated project files before running the script.
 - Do not invent strategies, metrics, returns, balances, or extra reasoning.
 - Do not paraphrase script output.
+- Always return English output.
 - If the user asks for multiple investor actions, run the matching scripts in request order and concatenate stdout blocks with a single blank line.
 
 ## Supported Commands
@@ -49,7 +50,7 @@ Example:
 User:
 
 ```text
-APY 20% 以上、Max DD 10% 以下の crypto strategy を explore して、一番良いものに 25,000 USDC invest して
+Explore crypto strategies with APY above 20% and Max DD below 10%, then invest 25,000 USDC in the best one.
 ```
 
 Run:
