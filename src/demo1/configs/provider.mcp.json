@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "zkstrategy": {
+      "command": "node",
+      "args": ["./src/demo1/platform/index.mjs"],
+      "env": {
+        "USER_ROLE": "provider",
+        "USER_ID": "provider_alice"
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "strategies": [
+    {
+      "id": "strat_eth_meanrev",
+      "name": "ETH Mean Reversion",
+      "description": "Mean reversion strategy on ETH/USD using Bollinger Bands and RSI",
+      "asset_class": "crypto",
+      "apy": 28.4,
+      "pnl": 31500,
+      "max_drawdown": -14.3,
+      "sharpe_ratio": 1.52,
+      "proof_status": "verified",
+      "proof_data": {
+        "type": "zktls_v1",
+        "data_source": "Coinbase API",
+        "attested_at": "2026-03-06T09:00:00Z",
+        "claims": { "apy": 28.4, "max_drawdown": -14.3, "sharpe_ratio": 1.52 },
+        "proof_hash": "0x4e2a...c83b"
+      },
+      "provider": "defi_labs",
+      "subscribers": 31,
+      "created_at": "2026-01-15T10:00:00Z"
+    },
+    {
+      "id": "strat_crypto_multi",
+      "name": "Crypto Multi-Factor",
+      "description": "Multi-factor model combining momentum, value, and sentiment for top 20 cryptos",
+      "asset_class": "crypto",
+      "apy": 22.1,
+      "pnl": 18900,
+      "max_drawdown": -9.8,
+      "sharpe_ratio": 2.14,
+      "proof_status": "verified",
+      "proof_data": {
+        "type": "zktls_v1",
+        "data_source": "Binance API",
+        "attested_at": "2026-03-05T15:00:00Z",
+        "claims": { "apy": 22.1, "max_drawdown": -9.8, "sharpe_ratio": 2.14 },
+        "proof_hash": "0x9f1c...d72e"
+      },
+      "provider": "sigma_capital",
+      "subscribers": 63,
+      "created_at": "2025-11-20T08:00:00Z"
+    }
+  ],
+  "subscriptions": [],
+  "signals": []
+}
